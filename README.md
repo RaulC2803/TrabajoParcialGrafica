@@ -7,6 +7,6 @@
 * Para evitar errores al compilar el código, quitar e insertar el archivo "glad.c"
 
 ## Integrantes
-* Raúl Casanova
-* Diego Bazán
-* Alexander Meléndez
+* Raúl Casanova       -   u201810539 
+* Diego Bazán         -   u201815174
+* Alexander Meléndez  -   u201815920
