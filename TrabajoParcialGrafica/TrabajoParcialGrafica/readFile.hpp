@@ -268,7 +268,38 @@ struct Figure {
 		}
 		stbi_image_free(data);
 	}
+	glm::mat4 translate(glm::mat4 transformacion, float a, float b, float c) {
+		return glm::translate(transformacion, glm::vec3(a, b, c));
+	}
 
+	glm::mat4 rotate(glm::mat4 transformacion, float angle, float a, float b, float c) {
+		return glm::rotate(transformacion, angle, glm::vec3(a, b, c));
+	}
+
+	glm::mat4 scale(glm::mat4 transformacion, float a, float b, float c) {
+		return glm::scale(transformacion, glm::vec3(a, b, c));
+	}
+
+
+	void perspective(CProgramaShaders programShader, float av, float width, float height, float x, float y, float z) {
+		glm::mat4 model = glm::mat4(1.0f);
+		glm::mat4 view = glm::mat4(1.0f);
+		glm::mat4 transformation = glm::mat4(1.0f);
+		glm::mat4 projection = glm::mat4(1.0f);
+
+		model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.5f, 1.0f, 0.0f));
+		view = this->translate(view, x, y, z);
+		projection = glm::perspective(glm::radians(av), (float)width / (float)height, 0.1f, 100.0f);
+
+		unsigned int modelLoc = glGetUniformLocation(programShader.shaderProgram, "model");
+		unsigned int viewLoc = glGetUniformLocation(programShader.shaderProgram, "view");
+
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &view[0][0]);
+		glUniformMatrix4fv(glGetUniformLocation(programShader.shaderProgram, "transformation"), 1, GL_FALSE, glm::value_ptr(transformation));
+
+		programShader.setMat4("projection", projection);
+	}
 };
 
 void read(std::string nameFile, Figure* figure, bool texture, bool rgb) {

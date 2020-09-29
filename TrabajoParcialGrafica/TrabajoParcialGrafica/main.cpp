@@ -63,7 +63,16 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
         programShader.usar();
 
-        
+        figure->perspective(programShader, 50.0, 800, 600, 0.0, 0.0, -3.0);
+
+
+        glm::mat4 transform = glm::mat4(1.0);
+        transform = figure->rotate(transform, (float)glfwGetTime(), 0.0, 0.0, 1.0);
+        transform = figure->scale(transform, sin((float)glfwGetTime()), sin((float)glfwGetTime()), 0.0);
+        transform = figure->translate(transform, sin((float)glfwGetTime()), cos((float)glfwGetTime()), 0.0);
+        glUniformMatrix4fv(glGetUniformLocation(programShader.shaderProgram, "transformation"), 1, GL_FALSE, glm::value_ptr(transform));
+
+        programShader.setColor("ourcolor", sin((float)glfwGetTime()), cos((float)glfwGetTime()), sin((float)glfwGetTime()));
 
         figure->drawFigure();
 
