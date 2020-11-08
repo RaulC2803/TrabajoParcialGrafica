@@ -18,7 +18,7 @@
     <ClCompile Include="main.cpp">
       <Filter>Archivos de origen</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\glad.c">
+    <ClCompile Include="..\..\..\LibreriaCG\glad.c">
       <Filter>Archivos de origen</Filter>
     </ClCompile>
   </ItemGroup>
@@ -27,6 +27,21 @@
       <Filter>Archivos de origen</Filter>
     </None>
     <None Include="GLSL\codigo.vs">
+      <Filter>Archivos de origen</Filter>
+    </None>
+    <None Include="light.fs">
+      <Filter>Archivos de origen</Filter>
+    </None>
+    <None Include="GLSL\light.vs">
+      <Filter>Archivos de origen</Filter>
+    </None>
+    <None Include="GLSL\light.fs">
+      <Filter>Archivos de origen</Filter>
+    </None>
+    <None Include="GLSL\multiplelights.fs">
+      <Filter>Archivos de origen</Filter>
+    </None>
+    <None Include="GLSL\multiplelights.vs">
       <Filter>Archivos de origen</Filter>
     </None>
   </ItemGroup>
