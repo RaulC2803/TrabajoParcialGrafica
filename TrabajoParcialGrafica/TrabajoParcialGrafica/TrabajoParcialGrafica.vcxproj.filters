@@ -44,6 +44,12 @@
     <None Include="GLSL\multiplelights.vs">
       <Filter>Archivos de origen</Filter>
     </None>
+    <None Include="GLSL\particle.fs">
+      <Filter>Archivos de origen</Filter>
+    </None>
+    <None Include="GLSL\particle.vs">
+      <Filter>Archivos de origen</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="readFile.hpp">

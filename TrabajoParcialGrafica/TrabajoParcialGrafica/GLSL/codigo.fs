@@ -75,7 +75,7 @@ void main(){
     vec3 specular = spec * lightColor * texture(specularTexture,fs_in.TexCoords).rgb;    
    
     float shadow = ShadowCalculation(fs_in.FragPosLightSpace, lightDir, normal);                      
-    vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular));    
+    vec3 lighting = (ambient + (1.0- shadow) * (diffuse + specular));    
     
     FragColor = vec4(lighting, 1.0);
 }

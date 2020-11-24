@@ -154,6 +154,8 @@
     <None Include="GLSL\light.vs" />
     <None Include="GLSL\multiplelights.fs" />
     <None Include="GLSL\multiplelights.vs" />
+    <None Include="GLSL\particle.fs" />
+    <None Include="GLSL\particle.vs" />
     <None Include="light.fs" />
   </ItemGroup>
   <ItemGroup>

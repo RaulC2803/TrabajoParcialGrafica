@@ -550,6 +550,35 @@ unsigned int TextureFromFile(const char* path, const string& directory, bool gam
 	return textureID;
 }
 
+unsigned int loadCubemap(vector<std::string> faces){
+	unsigned int textureID;
+	glGenTextures(1, &textureID);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+
+	int width, height, nrChannels;
+	for (unsigned int i = 0; i < faces.size(); i++)
+	{
+		unsigned char* data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
+		if (data)
+		{
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+			stbi_image_free(data);
+		}
+		else
+		{
+			std::cout << "Cubemap texture failed to load at path: " << faces[i] << std::endl;
+			stbi_image_free(data);
+		}
+	}
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+	return textureID;
+}
+
 enum Camera_Movement {
 	FORWARD,
 	BACKWARD,
@@ -560,7 +589,7 @@ enum Camera_Movement {
 // Default camera values
 const float YAW = -90.0f;
 const float PITCH = 0.0f;
-const float SPEED = 2.5f;
+const float SPEED = 5.5f;
 const float SENSITIVITY = 0.1f;
 const float ZOOM = 45.0f;
 
@@ -726,6 +755,8 @@ struct DepthMap {
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 };
+
+
 
 
 struct Figure {
@@ -912,3 +943,150 @@ void read(std::string nameFile, Figure* figure, bool texture, bool rgb) {
 	}
 
 }
+
+struct Particle {
+	glm::vec3 Position;
+	glm::vec4 Color;
+	float     Life;
+
+	Particle() : Position(0.0f),  Color(1.0f), Life(0.0f) { }
+};
+
+class ParticleGenerator
+{
+public:
+	// constructor
+
+	void init() {
+		// set up mesh and attribute properties
+		unsigned int VBO;
+		float particle_quad[] = {
+			0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+			0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
+			0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+			 
+			0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+			0.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+			0.0f, 1.0f, 0.0f, 1.0f, 0.0f
+		};
+		glGenVertexArrays(1, &this->VAO);
+		glGenBuffers(1, &VBO);
+		glBindVertexArray(this->VAO);
+		// fill mesh buffer
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(particle_quad), particle_quad, GL_STATIC_DRAW);
+		// set mesh attributes
+		
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+		glEnableVertexAttribArray(1);
+		glBindVertexArray(0);
+
+		// create this->amount default particle instances
+		for (unsigned int i = 0; i < this->amount; ++i)
+			this->particles.push_back(Particle());
+	}
+	ParticleGenerator(Shader shader, unsigned int texture, unsigned int amount) : shader(shader), texture(texture), amount(amount){
+		this->init();
+	}
+	// update all particles
+	// render all particles
+
+	
+	// returns the first Particle index that's currently unused e.g. Life <= 0.0f or 0 if no particle is currently inactive
+	unsigned int lastUsedParticle = 0;
+	unsigned int firstUnusedParticle()
+	{
+		// first search from last used particle, this will usually return almost instantly
+		for (unsigned int i = lastUsedParticle; i < this->amount; ++i) {
+			if (this->particles[i].Life <= 0.0f) {
+				lastUsedParticle = i;
+				return i;
+			}
+		}
+		// otherwise, do a linear search
+		for (unsigned int i = 0; i < lastUsedParticle; ++i) {
+			if (this->particles[i].Life <= 0.0f) {
+				lastUsedParticle = i;
+				return i;
+			}
+		}
+		// all particles are taken, override the first one (note that if it repeatedly hits this case, more particles should be reserved)
+		lastUsedParticle = 0;
+		return 0;
+	}
+	// respawns particle
+	void respawnParticle(Particle& particle, glm::vec3 position, float life, bool randomGrade, glm::vec4 color, int size) {
+		float randomx = ((rand()%size)-(size/2))/50.0;
+		float randomz = ((rand() % size) - (size/2)) / 50.0;
+		float rColor = 0.5f + ((rand() % 100) / 100.0f);
+		particle.Position = glm::vec3(position.x + randomx, position.y, position.z + randomz) ;
+		if (randomGrade) {
+			particle.Color = glm::vec4(rColor, 0.0, 0.0, 0.0f);
+		}
+		else {
+			particle.Color = color;
+		}
+		
+		particle.Life = life;
+	}
+
+	void Draw(glm::mat4 projection, glm::mat4 view, glm::mat4 model) {
+		// use additive blending to give it a 'glow' effect
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+		this->shader.use();
+		for (Particle particle : this->particles)
+		{
+			if (particle.Life > 0.0f)
+			{
+				glm::mat4 model2 = glm::mat4(1.0);
+				model2 = glm::translate(model2, particle.Position);
+				model2 = glm::scale(model2, glm::vec3(0.06));
+				this->shader.setVec4("color", particle.Color);
+				this->shader.setMat4("projection", projection);
+				this->shader.setMat4("view", view);
+				this->shader.setMat4("model", model2);
+				glBindTexture(GL_TEXTURE_2D, texture);
+				glBindVertexArray(this->VAO);
+				glDrawArrays(GL_TRIANGLES, 0, 6);
+				glBindVertexArray(0);
+			}
+		}
+		// don't forget to reset to default blending mode
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	}
+	void Update(float dt, unsigned int newParticles, glm::vec3 position, float life, glm::vec3 speed,bool randomgrade, glm::vec4 color, int size) {
+		// add new particles 
+		for (unsigned int i = 0; i < newParticles; ++i)
+		{
+			int unusedParticle = this->firstUnusedParticle();
+			this->respawnParticle(this->particles[unusedParticle], position, life, randomgrade, color , size);
+		}
+		// update all particles
+		for (unsigned int i = 0; i < this->amount; ++i)
+		{
+			Particle& p = this->particles[i];
+			p.Life -= dt; // reduce life
+			if (p.Life > 0.0f)
+			{	// particle is alive, thus update
+				p.Position  += glm::vec3(0.0f, dt , 0.0f) * speed;
+				
+			}
+		}
+	}
+private:
+	// state
+	std::vector<Particle> particles;
+	unsigned int amount;
+	// render state
+	Shader shader;
+	unsigned int texture;
+	unsigned int VAO;
+	// initializes buffer and vertex attributes
+	
+	
+
+
+
+};

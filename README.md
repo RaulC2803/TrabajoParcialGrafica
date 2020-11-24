@@ -5,6 +5,7 @@
 
 ## Indicaciones
 * Para evitar errores al compilar el código, quitar e insertar el archivo "glad.c"
+* Debe tener la  carpeta OpenGl en el directorio C:, la carpeta OpenGl debe tener todos los archivos relacionados con Assimp vistos en la última clase
 
 ## Integrantes
 * Raúl Casanova       -   u201810539 
